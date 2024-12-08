@@ -337,5 +337,3 @@ def get_photos():
 
 
 if __name__ == "__main__":
-        # ポートを 8080 に設定
-    app.run(host='127.0.0.1', port=5000)
