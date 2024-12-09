@@ -19,7 +19,7 @@ load_dotenv()
 
 # API キー
 OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+NEXT_PUBLIC_GOOGLE_API_KEY = os.getenv("NEXT_PUBLIC_GOOGLE_API_KEY")
 
 # MySQL接続設定
 app.config['MYSQL_HOST'] = 'localhost'
@@ -194,7 +194,7 @@ def get_lat_lng(address):
     print(f"Geocoding address: {address}")  # デバッグログ
     response = requests.get(
         "https://maps.googleapis.com/maps/api/geocode/json",
-        params={"address": address, "key": GOOGLE_API_KEY}
+        params={"address": address, "key": NEXT_PUBLIC_GOOGLE_API_KEY}
     )
     print(f"Geocoding API Response: {response.text}")  # デバッグログ
     if response.status_code == 200:
@@ -262,7 +262,7 @@ def get_route():
                 params = {
                     "path": path,
                     "interpolate": "true",
-                    "key": GOOGLE_API_KEY
+                    "key": NEXT_PUBLIC_GOOGLE_API_KEY
             }
         )
 
@@ -337,3 +337,4 @@ def get_photos():
 
 
 if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
