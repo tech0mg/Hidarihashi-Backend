@@ -214,7 +214,7 @@ def interpolate_path(start_coords, destination_coords):
         (start_coords['lat'], start_coords['lng']),
         (destination_coords['lat'], destination_coords['lng'])
     ).kilometers
-    num_points = max(10, int(distance * 5))  # 1kmあたり5ポイントを追加
+    num_points = max(10, int(distance * 10))  # 1kmあたり10ポイントを追加
     lat_diff = destination_coords['lat'] - start_coords['lat']
     lng_diff = destination_coords['lng'] - start_coords['lng']
     return [
@@ -251,10 +251,6 @@ def get_route():
         intermediate_points = interpolate_path(start_coords, destination_coords)
         path = "|".join([f"{p['lat']},{p['lng']}" for p in intermediate_points])
         print(f"Constructed path with intermediate points for API request: {path}")
-
-        # Snap to Roads API リクエストの URL を構築
-        path = f"{start_coords['lat']},{start_coords['lng']}|{destination_coords['lat']},{destination_coords['lng']}"
-        print(f"Constructed path for API request: {path}")  # pathを出力
 
         snap_to_roads_url = "https://roads.googleapis.com/v1/snapToRoads"
         response = requests.get(
