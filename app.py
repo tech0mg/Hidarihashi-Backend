@@ -21,11 +21,17 @@ load_dotenv()
 OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# MySQL接続設定
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'Password123'
-app.config['MYSQL_DATABASE'] = 'sample_app'
+# MySQL接続設定をenvから呼び出す おやけ変更
+app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')  # 環境変数から取得
+app.config['MYSQL_USER'] = os.getenv('MYSQL_USER')  # 環境変数から取得
+app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD')  # 環境変数から取得
+app.config['MYSQL_DATABASE'] = os.getenv('MYSQL_DATABASE')  # 環境変数から取得
+
+# MYSQLデバッグコード追加 おやけ
+print("MYSQL_HOST:", os.getenv('MYSQL_HOST'))
+print("MYSQL_USER:", os.getenv('MYSQL_USER'))
+print("MYSQL_PASSWORD:", os.getenv('MYSQL_PASSWORD'))
+print("MYSQL_DATABASE:", os.getenv('MYSQL_DATABASE'))
 
 
 def get_db_connection():
@@ -89,14 +95,37 @@ def add_user():
 def index():
     return "<p>Flask top page!</p>"
 
-# リスト画像一覧を取得するエンドポイント
+# リスト画像一覧を取得するエンドポイントをコメントアウト おやけ
 @app.route('/api/images', methods=['GET'])
 def get_images():
-    images_dir = os.path.join(app.static_folder, "images")
-    image_files = os.listdir(images_dir)
-    image_urls = [f"/static/images/{img}" for img in image_files]
-    return jsonify({"images": image_urls})
+    # 元のコード（コメントアウトで残す）
+    # images_dir = os.path.join(app.static_folder, "images")
+    # image_files = os.listdir(images_dir)
+    # image_urls = [f"/static/images/{img}" for img in image_files]
+    # return jsonify({"images": image_urls})
 
+    # 新しいコード: MySQLデータベースから画像データを取得 おやけ
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        # イベントデータと画像URLを取得 おやけ
+        query = "SELECT event_name, image_path FROM event_data_child"
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+        # 結果を整形してJSONで返す おやけ
+        images = [{"event_name": row["event_name"], "image_url": row["image_path"]} for row in results]
+        response = json.dumps({"images": images}, ensure_ascii=False)  # Unicodeエスケープを防ぐよう変更
+        return response, 200, {'Content-Type': 'application/json; charset=utf-8'}  # UTF-8でレスポンス
+    except mysql.connector.Error as e:
+        print(f"Database error: {e}")
+        return jsonify({"error": "Failed to fetch images"}), 500
+    finally:
+        cursor.close()
+        connection.close()
 
 # しおりのイラスト一覧を取得するエンドポイント
 @app.route('/api/illustrations', methods=['GET'])
@@ -337,3 +366,4 @@ def get_photos():
 
 
 if __name__ == "__main__":
+    app.run(host='127.0.0.1', port=5000)
