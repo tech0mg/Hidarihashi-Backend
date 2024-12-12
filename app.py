@@ -8,6 +8,7 @@ import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
 from geopy.distance import geodesic
+from uuid import uuid4
 
 # Azure Database for MySQL
 # REST APIでありCRUDを持っている
@@ -339,8 +340,49 @@ def get_shiori_data():
     }
     return jsonify(data), 200
 
+# 記録のサンプルデータ（情報をデータベースに変更出来たら・・・）
+records = [
+    {
+        "id": 1,
+        "title": "夜のすいぞくかん",
+        "date": "2024/10/05",
+        "rating": 5,
+        "revisit": 5,
+        "review": "ライトアップされたホテルイミネーションがとても綺麗でした。魚たちの動きが幻想的で癒されました。",
+        "images": [
+            "/static/images/image1.jpg",
+            "/static/images/image2.jpg"
+        ]
+    },
+    {
+        "id": 2,
+        "title": "大きなしゃぼん玉づくり体験",
+        "date": "2024/10/05",
+        "rating": 4,
+        "revisit": 4,
+        "review": "子供たちが楽しそうにしゃぼん玉を作っていました。貴重な思い出となりました。",
+        "images": [
+            "/static/images/image3.jpg",
+            "/static/images/image4.jpg"
+        ]
+    }
+]
 
-# 写真アップロードのエンドポイントを追加
+# 記録のエンドポイント
+@app.route('/api/kiroku-data', methods=['GET'])
+def get_kiroku_data():
+    return jsonify(records), 200
+
+
+@app.route('/api/kiroku-data/<int:record_id>', methods=['GET'])
+def get_kiroku_by_id(record_id):
+    record = next((r for r in records if r['id'] == record_id), None)
+    if not record:
+        return jsonify({"error": "Record not found"}), 404
+    return jsonify(record), 200
+
+
+# 写真アップロードのエンドポイント
 @app.route('/api/upload-photo', methods=['POST'])
 def upload_photo():
     if 'photo' not in request.files:
@@ -355,11 +397,23 @@ def upload_photo():
     if not os.path.exists(photos_dir):
         os.makedirs(photos_dir)
 
+    # 一時的なIDを生成（UUIDを使用）
+    photo_id = str(uuid4())
+    file_extension = os.path.splitext(file.filename)[1]  # ファイル拡張子を取得
+    new_filename = f"{photo_id}{file_extension}"  # 新しいファイル名としてIDを使用
+
+
     # ファイルを保存
-    file_path = os.path.join(photos_dir, file.filename)
+    file_path = os.path.join(photos_dir, new_filename)
     file.save(file_path)
 
-    return jsonify({"message": "File uploaded successfully", "file_path": file_path}), 201
+    # フロントエンドで使用するURLを返す(DB構築時に写真の場所を変更)
+    file_url = f"/static/photos/{new_filename}"
+
+    print(f"Request.files: {request.files}")  # デバッグ用
+    print(f"File path: {file_path}")  # 保存場所の確認
+    print(f"File URL: {file_url}")  # URLの確認
+    return jsonify({"message": "File uploaded successfully", "photo_id": photo_id, "file_url": file_url}), 201
 
 
 # アップロードされた写真一覧を取得するエンドポイント
@@ -373,6 +427,16 @@ def get_photos():
     photo_urls = [f"/static/photos/{file}" for file in photo_files]
     return jsonify({"photos": photo_urls})
 
+# アップロードされた写真一覧から特定のURLを取得し画像を表示
+@app.route('/static/photos/<path:filename>')
+def serve_photo(filename):
+    photos_dir = os.path.join(app.static_folder, "photos")
+    return send_from_directory(photos_dir, filename)
+
+# 写真のレスポンス確認のデバッグ用エンドポイント
+@app.route('/api/debug', methods=['GET'])
+def debug():
+    return jsonify({"message": "API is working", "photos_dir": os.path.join(app.static_folder, "photos")}), 200
 
 
 if __name__ == "__main__":
