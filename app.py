@@ -286,6 +286,28 @@ def get_route():
         print(f"Error fetching route: {e}")
         return jsonify({"error": "経路情報取得中にエラーが発生しました"}), 500
 
+#shiori_checkのデータ保持
+@app.route('/api/shiori-data', methods=['GET'])
+def get_shiori_data():
+    # サンプルデータを返す
+    data = {
+        "page1": {
+            "title": "しおりタイトル",
+            "producer": "プロデューサー名"
+        },
+        "page2": {
+            "schedule": "スケジュール内容"
+        },
+        "page3": {
+            "weather": "晴れ",
+            "mapUrl": "/static/images/map.png"  # 適切な画像パスを指定
+        },
+        "page4": {
+            "memo": "これはメモです"
+        }
+    }
+    return jsonify(data), 200
+
 
 # 写真アップロードのエンドポイントを追加
 @app.route('/api/upload-photo', methods=['POST'])
