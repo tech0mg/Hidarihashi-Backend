@@ -8,6 +8,9 @@ import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
 from geopy.distance import geodesic
+from db_control.connect import get_db_connection
+from sqlalchemy.sql import text 
+
 from uuid import uuid4
 
 # Azure Database for MySQL
@@ -22,41 +25,6 @@ load_dotenv()
 OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
 NEXT_PUBLIC_GOOGLE_API_KEY = os.getenv("NEXT_PUBLIC_GOOGLE_API_KEY")
 
-# MySQL接続設定をenvから呼び出す おやけ変更
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')  # 環境変数から取得
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER')  # 環境変数から取得
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD')  # 環境変数から取得
-app.config['MYSQL_DATABASE'] = os.getenv('MYSQL_DATABASE')  # 環境変数から取得
-
-# MYSQLデバッグコード追加 おやけ
-print("MYSQL_HOST:", os.getenv('MYSQL_HOST'))
-print("MYSQL_USER:", os.getenv('MYSQL_USER'))
-print("MYSQL_PASSWORD:", os.getenv('MYSQL_PASSWORD'))
-print("MYSQL_DATABASE:", os.getenv('MYSQL_DATABASE'))
-
-
-def get_db_connection():
-    try:
-        connection = mysql.connector.connect(
-            host=app.config['MYSQL_HOST'],
-            user=app.config['MYSQL_USER'],
-            password=app.config['MYSQL_PASSWORD'],
-            database=app.config['MYSQL_DATABASE']
-        )
-        return connection
-    except Error as e:
-        print(f"Error connecting to MySQL: {e}")
-        return None
-    
-@app.route('/test_db', methods=['GET'])
-def test_db():
-    connection = get_db_connection()
-    if connection:
-        connection.close()
-        return {"status": "success", "message": "Database connection successful"}, 200
-    else:
-        return {"status": "error", "message": "Database connection failed"}, 500
-    
 
 @app.route('/users', methods=['GET'])
 def get_users():
@@ -96,37 +64,38 @@ def add_user():
 def index():
     return "<p>Flask top page!</p>"
 
-# リスト画像一覧を取得するエンドポイントをコメントアウト おやけ
+
 @app.route('/api/images', methods=['GET'])
 def get_images():
-    # 元のコード（コメントアウトで残す）
-    # images_dir = os.path.join(app.static_folder, "images")
-    # image_files = os.listdir(images_dir)
-    # image_urls = [f"/static/images/{img}" for img in image_files]
-    # return jsonify({"images": image_urls})
-
-    # 新しいコード: MySQLデータベースから画像データを取得 おやけ
-    connection = get_db_connection()
-    if not connection:
-        return jsonify({"error": "Database connection failed"}), 500
-    
+    # データベース接続の取得
     try:
-        cursor = connection.cursor(dictionary=True)
-        # イベントデータと画像URLを取得 おやけ
-        query = "SELECT event_name, image_path FROM event_data_child"
-        cursor.execute(query)
-        results = cursor.fetchall()
+        connection = get_db_connection()
+    except Exception as e:
+        print(f"Error connecting to the database: {e}")
+        return jsonify({"error": "Database connection failed"}), 500
 
-        # 結果を整形してJSONで返す おやけ
+    try:
+        # SQLAlchemy の text を使用したクエリ
+        query = text("SELECT event_name, image_path FROM event_data_child")
+        results = connection.execute(query).mappings().all()
+
+        # 辞書形式のデータをリストに変換
         images = [{"event_name": row["event_name"], "image_url": row["image_path"]} for row in results]
-        response = json.dumps({"images": images}, ensure_ascii=False)  # Unicodeエスケープを防ぐよう変更
-        return response, 200, {'Content-Type': 'application/json; charset=utf-8'}  # UTF-8でレスポンス
-    except mysql.connector.Error as e:
-        print(f"Database error: {e}")
+        
+        # レスポンスを JSON 形式で作成
+        response = jsonify({"images": images})
+        response.headers["Content-Type"] = "application/json; charset=utf-8"
+        return response, 200
+
+    except Exception as e:
+        print(f"Database query error: {e}")
         return jsonify({"error": "Failed to fetch images"}), 500
+
     finally:
-        cursor.close()
-        connection.close()
+        # SQLAlchemy の Connection オブジェクトを閉じる
+        if 'connection' in locals():
+            connection.close()
+
 
 # しおりのイラスト一覧を取得するエンドポイント
 @app.route('/api/illustrations', methods=['GET'])
