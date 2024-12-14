@@ -96,6 +96,10 @@ def get_images():
         if 'connection' in locals():
             connection.close()
 
+# top_totalの画像を提供するためのエンドポイント
+@app.route('/static/<path:filename>')
+def serve_static_file(filename):
+    return send_from_directory('static', filename)
 
 # しおりのイラスト一覧を取得するエンドポイント
 @app.route('/api/illustrations', methods=['GET'])
