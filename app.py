@@ -234,7 +234,6 @@ def interpolate_path(start_coords, destination_coords):
 # 経路の取得と表示
 @app.route('/api/route', methods=['GET'])
 def get_route():
-    print("get_route called")
     start = request.args.get('start')
     destination = request.args.get('destination')
     print(f"Start: {start}, Destination: {destination}")
@@ -273,23 +272,19 @@ def get_route():
             return jsonify({"error": "最短経路が見つかりませんでした"}), 500
 
         # 最短経路のポイントを取得
-        route = directions_data["routes"][0]["overview_polyline"]["points"]
+        # route = directions_data["routes"][0]["overview_polyline"]["points"]
 
         # Google MapsのURLを生成
         google_maps_url = (
             f"https://www.google.com/maps/dir/?api=1&origin={start_coords['lat']},{start_coords['lng']}"
             f"&destination={destination_coords['lat']},{destination_coords['lng']}&travelmode=driving"
         )
-        print(f"Generated Google Maps URL: {google_maps_url}")
+        print(f"Generated Google Maps URL: {google_maps_url}"), 200
 
-        return jsonify({
-            "polyline": route,
-            "googleMapsUrl": google_maps_url
-        }), 200
+        return jsonify({"googleMapsUrl": google_maps_url}), 200
 
     except Exception as e:
-        print(f"Error fetching route: {e}")
-        return jsonify({"error": "経路情報取得中にエラーが発生しました"}), 500
+        return jsonify({"error": f"経路情報取得中にエラーが発生しました: {str(e)}"}), 500
 
 #shiori_checkのデータ保持
 @app.route('/api/shiori-data', methods=['GET'])
