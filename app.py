@@ -308,6 +308,18 @@ def get_shiori_data():
     }
     return jsonify(data), 200
 
+
+# しおりチェックのイラストを提供するためのエンドポイント
+@app.route('/images/<filename>')
+def get_image(filename):
+    return send_from_directory('static/illustrations', filename)
+
+# しおりチェックの写真を提供するためのエンドポイント
+@app.route('/photo_demo/<filename>')
+def get_photo(filename):
+    return send_from_directory('static/demo', filename)
+
+
 # 記録のサンプルデータ（情報をデータベースに変更出来たら・・・）
 records = [
     {
