@@ -15,7 +15,7 @@ from uuid import uuid4
 
 # Azure Database for MySQL
 # REST APIでありCRUDを持っている
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__, static_url_path="/static",static_folder='static')
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # 環境変数をロード
@@ -334,9 +334,8 @@ records = [
         "date": "2024/10/05",
         "rating": 5,
         "revisit": 5,
-        "review": "ライトアップされたホテルイミネーションがとても綺麗でした。魚たちの動きが幻想的で癒されました。",
+        "review": "ライトアップされたホテルイミネーションがとてもキレイでした。魚たちのうごきがおもしろかったです。",
         "images": [
-            "/static/images/image1.jpg",
             "/static/images/image2.jpg"
         ]
     },
@@ -346,10 +345,9 @@ records = [
         "date": "2024/10/05",
         "rating": 4,
         "revisit": 4,
-        "review": "子供たちが楽しそうにしゃぼん玉を作っていました。貴重な思い出となりました。",
+        "review": "おおきなしゃぼん玉が作れました。次は友だちともう一度作りたいです。",
         "images": [
-            "/static/images/image3.jpg",
-            "/static/images/image4.jpg"
+            "/static/images/image3.jpg"
         ]
     }
 ]
@@ -366,6 +364,14 @@ def get_kiroku_by_id(record_id):
     if not record:
         return jsonify({"error": "Record not found"}), 404
     return jsonify(record), 200
+
+# 記録ページでの静的な画像表示エンドポイント
+@app.route('/static/images/<path:filename>')
+def serve_images(filename):
+    images_dir = os.path.join(app.static_folder, "images")
+    if not os.path.exists(images_dir):
+        return "Images directory not found", 404
+    return send_from_directory(images_dir, filename)
 
 
 # 写真アップロードのエンドポイント
