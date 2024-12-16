@@ -101,6 +101,12 @@ def get_images():
 def serve_static_file(filename):
     return send_from_directory('static', filename)
 
+# presentationのPDFスライドを提示するためのエンドポイント
+@app.route('/pdf/slide', methods=['GET'])
+def get_slide_pdf():
+    return send_from_directory('static/presentation', 'slide.pdf', as_attachment=False)
+
+
 # しおりのイラスト一覧を取得するエンドポイント
 @app.route('/api/illustrations', methods=['GET'])
 def get_illustrations():
@@ -307,6 +313,18 @@ def get_shiori_data():
         }
     }
     return jsonify(data), 200
+
+
+# しおりチェックのイラストを提供するためのエンドポイント
+@app.route('/images/<filename>')
+def get_image(filename):
+    return send_from_directory('static/illustrations', filename)
+
+# しおりチェックの写真を提供するためのエンドポイント
+@app.route('/photo_demo/<filename>')
+def get_photo(filename):
+    return send_from_directory('static/demo', filename)
+
 
 # 記録のサンプルデータ（情報をデータベースに変更出来たら・・・）
 records = [
