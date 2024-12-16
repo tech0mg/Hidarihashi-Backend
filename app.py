@@ -101,6 +101,12 @@ def get_images():
 def serve_static_file(filename):
     return send_from_directory('static', filename)
 
+# presentationのPDFスライドを提示するためのエンドポイント
+@app.route('/pdf/slide', methods=['GET'])
+def get_slide_pdf():
+    return send_from_directory('static/presentation', 'slide.pdf', as_attachment=False)
+
+
 # しおりのイラスト一覧を取得するエンドポイント
 @app.route('/api/illustrations', methods=['GET'])
 def get_illustrations():
