@@ -76,11 +76,11 @@ def get_images():
 
     try:
         # SQLAlchemy の text を使用したクエリ
-        query = text("SELECT event_name, image_path FROM event_data_child")
+        query = text("SELECT  event_id, event_name, image_path FROM event_data_child")
         results = connection.execute(query).mappings().all()
 
-        # 辞書形式のデータをリストに変換
-        images = [{"event_name": row["event_name"], "image_url": row["image_path"]} for row in results]
+        # 辞書形式のデータをリストに変換  # event_idを追加
+        images = [{"event_id": row["event_id"], "event_name": row["event_name"], "image_url": row["image_path"]} for row in results]
         
         # レスポンスを JSON 形式で作成
         response = jsonify({"images": images})
@@ -95,6 +95,45 @@ def get_images():
         # SQLAlchemy の Connection オブジェクトを閉じる
         if 'connection' in locals():
             connection.close()
+
+# イベント詳細を取得するエンドポイント(おやけ追加)
+@app.route('/api/event-detail', methods=['GET'])
+def get_event_detail():
+    event_id = request.args.get('id')  # クエリパラメータ 'id' を取得
+    if not event_id:
+        return jsonify({"error": "Event ID is required"}), 400
+
+    try:
+        connection = get_db_connection()  # データベース接続の取得
+        query = text("""
+            SELECT event_id,event_name, event_place, event_date, event_cost, event_detail 
+            FROM event_data_child 
+            WHERE event_id = :event_id
+        """)
+        result = connection.execute(query, {"event_id": event_id}).mappings().fetchone()
+
+        if not result:
+            return jsonify({"error": "Event not found"}), 404
+
+        # 結果を辞書に変換
+        event = {
+            "event_name": result["event_name"],
+            "event_place": result["event_place"],
+            "event_date": result["event_date"],
+            "event_cost": result["event_cost"],
+            "event_detail": result["event_detail"],
+        }
+        return jsonify({"event": event}), 200
+
+    except Exception as e:
+        print(f"Error fetching event details: {e}")
+        return jsonify({"error": "Failed to fetch event details"}), 500
+
+    finally:
+        # 接続を閉じる
+        if 'connection' in locals():
+            connection.close()
+
 
 # top_totalの画像を提供するためのエンドポイント
 @app.route('/static/<path:filename>')
